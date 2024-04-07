@@ -1,0 +1,10 @@
+nilearn==0.10.3
+nibabel==5.2.1
+torch==2.0.1
+torchio==0.19.6
+torchvision==0.15.2
+skimage==0.22.0
+matplotlib==3.8.2
+fastapi==0.99.1
+uvicorn==0.27.1
+google-cloud-storage==2.16.0
