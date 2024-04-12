@@ -1,4 +1,11 @@
-# task-gesund
+# Diagram of working System.
+
+![Screenshot from 2024-04-12 11-28-39](https://github.com/ozkanuysal/task-gesund/assets/61411331/d0280716-bca5-489e-93ba-f8cde3ee9a94)
+
+
+
+
+# task-gesund Step by Step Application
 Giving a task from gesund ai 
 
 # Step by step what I will do.
