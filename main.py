@@ -16,9 +16,30 @@ import pymongo
 from pymongo import MongoClient
 from uuid import uuid4
 import gridfs
+import dns.resolver
+
+
+dns.resolver.default_resolver=dns.resolver.Resolver(configure=False)
+dns.resolver.default_resolver.nameservers=['8.8.8.8']
+
 
 app = FastAPI()
-collectionid = uuid4()
+cluster = MongoClient(
+    host='mongodb+srv://clus.75dbtja.mongodb.net', 
+    serverSelectionTimeoutMS=3000,
+    socketTimeoutMS=3000, 
+    username="ozkan",
+    password=os.environ.get("MONGO_PASSWORD"),
+    uuidRepresentation='standard'
+)
+db = cluster["gesund_ai"]
+collection = db["case"]
+gridfs = gridfs.GridFS(db)
+
+model = UNET3D(in_channels=4, out_channels=64, n_classes=3).cpu()
+model.load_state_dict(torch.load("model.pth", map_location='cpu'))
+
+model.eval()
 
 @app.get("/batch")
 async def read_batch_input(names: str):
@@ -90,47 +111,29 @@ async def read_single_input(name: str):
         plt.savefig(f'{name}.png')
         
         filename = f'{name}.png'
-        output = os.path.join('/home/ozkan/Desktop/gesund_task/', filename)
+        output = os.path.join(filename)
 
         end_time = time.time()
         duration = end_time - start_time
 
-    #     return {
-    #         "name": f"{name}.png",
-
-    #     }
-    # except Exception as e:
-    #     return {
-    #         "error": str(e)
-    #     }
-
+        collectionid = uuid4()
         collect = {"time": duration , "name": f"{name}.png", "_id": str(collectionid)}
         collection.insert_one(collect)
 
         with open(output, 'rb') as f:
             contents = f.read()
 
-        gridfs.put(contents, filename="file")    
-
+        gridfs.put(contents, filename=f"{name}.png")    
+        return {
+            "name": f"{name}.png",
+            "time": duration,
+            "id": str(collectionid)
+        }
+    
     except Exception as e:
         return {
             "error": str(e)
         }
     
 if __name__ == '__main__':
-    model = UNET3D(in_channels=4, out_channels=64, n_classes=3)
-    model.load_state_dict(torch.load("model.pth"))
-    model.eval()
-    cluster = MongoClient(
-    host = 'mongodb+srv://clus.75dbtja.mongodb.net', 
-    serverSelectionTimeoutMS = 3000,
-    socketTimeoutMS = 3000, 
-    username="ozkan",
-    password=os.environ.get("MONGO_PASSWORD"),
-    uuidRepresentation='standard'
-)
-    db = cluster["gesund_ai"]
-    collection = db["case"]
-    gridfs = gridfs.GridFS(db)
-    
     uvicorn.run(app, host="0.0.0.0", port=8080)
