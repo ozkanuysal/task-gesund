@@ -12,6 +12,9 @@
 - Example usage : export MONGO_PASSWORD=''
 
 
+# Show Health of Docker Containers
+- chmod +x health_status.sh
+- sudo ./health_status.sh
 
 # task-gesund Step by Step Application
 Giving a task from gesund ai 
