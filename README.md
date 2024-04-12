@@ -24,7 +24,7 @@ Giving a task from gesund ai
 
 ### 3) Model needs to deploy in docker
 
-### 4) Create a fastapi 
+### 4) Create a fastapi script.
 
 ### 5) In this fastapi endpoints needs to be async api 
 
