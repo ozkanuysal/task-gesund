@@ -46,9 +46,14 @@ def page_one():
 
 
     if st.button('Run'):
-        with st.status("Processing...", expanded=True) as status :
+        with st.status("Processing...", expanded=False) as status :
             response = requests.get(f'http://localhost:8080/single?name={options_names}')
             if response.status_code == 200:
+                # Take a count for images in the pymongo
+                count = files_collection_images.count_documents({"filename": f"{options_names}.png"})
+                #avg_time = collection.aggregate([{"$group": {"_id": "$name", "avg": {"$avg": "$time"}}}])[0]["avg"]
+                
+
                 data = files_collection_images.find_one({"filename": f"{options_names}.png"})
                 file_id = data.get('_id')
                 chunks_query = {"files_id": file_id}
@@ -56,9 +61,26 @@ def page_one():
                 image_data = b"".join(chunk.get('data') for chunk in chunks)
                 image = Image.open(io.BytesIO(image_data))
                 st.image(image, caption=response.json().get('name'))
-                status.update(label="Completed!", state="complete", expanded=False)
-                st.write('Duration : ' + str(round(response.json().get('time'),3)))
-                st.write(response.json())
+                status.update(label="Completed!", state="complete", expanded=True)
+                
+                # st.write(response.json())
+                
+                # st.write('Total count : ' + str(count))
+
+                avg_time = collection.find({"name": f"{options_names}.png"})
+
+                avg_times = 0
+                avg_counter = 0
+
+                for each_avg in avg_time:
+                    avg_counter += 1
+                    avg_times += each_avg['time']
+
+                # st.write('Average time : ' + str(round(avg_times / avg_counter, 3)))
+                st.write('Duration : ' + str(round(response.json().get('time'),3)) \
+                         + '   ---   \tAverage time : ' + str(round(avg_times / avg_counter, 3)) \
+                            + '   ---   \tTotal count : ' + str(count))
+
             else:
                 st.write(f'Error: {response.status_code}') 
                 
