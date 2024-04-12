@@ -34,48 +34,6 @@ model.load_state_dict(torch.load("model.pth", map_location='cpu'))
 
 model.eval()
 
-@app.get("/batch")
-async def read_batch_input(names: str):
-    """
-    A function to read batch input data, process it, generate predictions, plot images, and return a list of plot names.
-    
-    Parameters:
-        names (str): A comma-separated string of names representing the batch input data.
-    
-    Returns:
-        dict: A dictionary containing a key "mesasage" with a list of plot names generated.
-    """
-    datas, labels = [], []
-    for each in names.split(","):
-        data, label = read('gesund_task_data_bucket',each.strip())
-        datas.append(data)
-        labels.append(label)
-    print(len(datas))
-    with torch.no_grad():
-        results = model(torch.stack(datas))
-
-    plot_names = []
-    for i, each in enumerate(names.split(",")):
-        mask_tensor = labels[i].data.squeeze()[0].squeeze().cpu().detach().numpy()
-        mask = np.rot90(montage(mask_tensor))
-
-        image_tensor = datas[i].squeeze()[1].cpu().detach().numpy()
-        image = np.rot90(montage(image_tensor))
-
-        predict_tensor = results[i].squeeze()[0].squeeze().cpu().detach().numpy()
-        mask_predict = np.rot90(montage(predict_tensor))
-        
-        fig, (ax1 ) = plt.subplots(1, 1, figsize = (20, 20))
-        ax1.imshow(image,cmap = 'gray')
-        ax1.imshow(np.ma.masked_where(mask == False, mask_predict),cmap='cool', alpha=0.6)
-        plt.savefig(f'{each}.png')
-        plot_names.append(f'{each}.png')
-
-    return {
-        "mesasage": plot_names,
-    }
-
-
 async def process_single(name: str):
     
     start_time = time.time()
@@ -132,6 +90,62 @@ async def read_single_input(name: str):
     result = await process_single(name)
     
     return result
+
+
+
+@app.get("/batch")
+async def read_batch_input(names: str):
+    """
+    A function to read batch input data, process it, generate predictions, plot images, and return a list of plot names.
+    
+    Parameters:
+        names (str): A comma-separated string of names representing the batch input data.
+    
+    Returns:
+        dict: A dictionary containing a key "mesasage" with a list of plot names generated.
+    """
+    try :
+        datas, labels = [], []
+        for each in names.split(","):
+            data, label = read('gesund_task_data_bucket',each.strip())
+            datas.append(data)
+            labels.append(label)
+        print(len(datas))
+        with torch.no_grad():
+            results = model(torch.stack(datas))
+
+        plot_names = []
+        for i, each in enumerate(names.split(",")):
+            mask_tensor = labels[i].data.squeeze()[0].squeeze().cpu().detach().numpy()
+            mask = np.rot90(montage(mask_tensor))
+
+            image_tensor = datas[i].squeeze()[1].cpu().detach().numpy()
+            image = np.rot90(montage(image_tensor))
+
+            predict_tensor = results[i].squeeze()[0].squeeze().cpu().detach().numpy()
+            mask_predict = np.rot90(montage(predict_tensor))
+            
+            _, (ax1 ) = plt.subplots(1, 1, figsize = (20, 20))
+            ax1.imshow(image,cmap = 'gray')
+            ax1.imshow(np.ma.masked_where(mask == False, mask_predict),cmap='cool', alpha=0.6)
+            plt.savefig(f'{each}.png')
+            filename = f'{each}.png'
+
+            with open(filename, 'rb') as f:
+                contents = f.read()
+
+            gridfs.put(contents, filename=f"{each}.png")
+            plot_names.append(f'{each}.png')
+
+        return {
+            "mesasage": plot_names,
+        }
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
+
+
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8080)
