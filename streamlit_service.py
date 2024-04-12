@@ -38,14 +38,16 @@ gridfs = gridfs.GridFS(db)
 def page_one():
 
     st.title('Gesund AI Task')
-    options_names = st.selectbox('Select an Dataset', ['BraTS20_Training_158', 'BraTS20_Training_234', 'BraTS20_Training_230', 'BraTS20_Training_249', 'BraTS20_Training_238'])
-
+    options_names = st.selectbox('Select Single Dataset', ['BraTS20_Training_158', 'BraTS20_Training_234', 'BraTS20_Training_230', 'BraTS20_Training_249', 'BraTS20_Training_238'])
+    batch_options = st.multiselect('Select Batch Datasets', ['BraTS20_Training_158', 'BraTS20_Training_234', 'BraTS20_Training_230', 'BraTS20_Training_249', 'BraTS20_Training_238'], max_selections=2)
+    st.write('Selected Batch Datasets:', batch_options)
+    st.write('Selected Dataset:', ','.join(batch_options))
     db_images = cluster["gesund_ai"]
     chunks_collection_images = db["fs.chunks"]
     files_collection_images = db["fs.files"]
 
 
-    if st.button('Run'):
+    if st.button('Run Single'):
         with st.status("Processing...", expanded=False) as status :
             response = requests.get(f'http://localhost:8080/single?name={options_names}')
             if response.status_code == 200:
@@ -83,7 +85,28 @@ def page_one():
 
             else:
                 st.write(f'Error: {response.status_code}') 
-                
+
+
+    if st.button('Run Batch'):
+        with st.status("Processing...", expanded=False) as status :
+            response = requests.get(f'http://localhost:8080/batch?names={",".join(batch_options)}')
+            if response.status_code == 200:
+                image_names = response.json().get('mesasage')
+                for each_image in image_names:
+                    data = files_collection_images.find_one({"filename": each_image})
+                    file_id = data.get('_id')
+                    chunks_query = {"files_id": file_id}
+                    chunks = chunks_collection_images.find(chunks_query).sort("n")
+                    image_data = b"".join(chunk.get('data') for chunk in chunks)
+                    image = Image.open(io.BytesIO(image_data))
+                    st.image(image, caption=each_image)
+                status.update(label="Completed!", state="complete", expanded=True)
+
+            else:
+                st.write(f'Error: {response.status_code}') 
+
+        
+
 if __name__ == '__main__':
     PAGES = {
         "Call Endpoint": page_one,    
