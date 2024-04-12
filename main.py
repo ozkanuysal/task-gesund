@@ -35,6 +35,18 @@ model.load_state_dict(torch.load("model.pth", map_location='cpu'))
 model.eval()
 
 async def process_single(name: str):
+    """
+    A function that processes a single piece of data. 
+    It reads the data from a specified bucket, makes predictions using a pre-trained model, 
+    generates masks and images, saves the result as an image file, and stores the processing time and file details in a database. 
+    If an exception occurs during the process, it returns an error message. 
+    Parameters:
+        name (str): The name of the data file to be processed.
+    Returns:
+        dict: A dictionary containing the processed image name, processing time, and unique identifier.
+               If an error occurs, it returns a dictionary with an error message.
+    """
+    
     
     start_time = time.time()
     try :
@@ -86,6 +98,15 @@ async def process_single(name: str):
 
 @app.get("/single")
 async def read_single_input(name: str):
+    """
+    A function that reads a single input and processes it, returning the result.
+    
+    Parameters:
+    - name (str): The input name to be processed.
+    
+    Returns:
+    - The result of processing the input.
+    """
     
     result = await process_single(name)
     
@@ -144,7 +165,6 @@ async def read_batch_input(names: str):
         return {
             "error": str(e)
         }
-
 
 
 if __name__ == '__main__':
