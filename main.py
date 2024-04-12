@@ -1,22 +1,18 @@
-import sys
 import os
 import torch
 from model_class import UNET3D
-from refactor_code import Normalize
-from refactor_code import ConvertToMultiChannel
 from google_cloud import read
 from skimage.util import montage
 import numpy as np
 from fastapi import FastAPI
 import uvicorn
-from typing import List
 from matplotlib import pyplot as plt
 import time
-import pymongo
 from pymongo import MongoClient
 from uuid import uuid4
 import gridfs
 import dns.resolver
+
 
 
 dns.resolver.default_resolver=dns.resolver.Resolver(configure=False)
@@ -82,13 +78,9 @@ async def read_batch_input(names: str):
         "mesasage": plot_names,
     }
 
-@app.get("/single")
-async def read_single_input(name: str):
-    """
-    Function to read a single input and perform some image processing operations. 
-    Takes a `name` parameter of type str. 
-    Returns a dictionary containing the file name of the processed image or an error message.
-    """
+
+async def process_single(name: str):
+    
     start_time = time.time()
     try :
         data, label = read('gesund_task_data_bucket', name)
@@ -105,7 +97,7 @@ async def read_single_input(name: str):
         predict_tensor = result.squeeze()[0].squeeze().cpu().detach().numpy()
         mask_predict = np.rot90(montage(predict_tensor))
         
-        fig, (ax1 ) = plt.subplots(1, 1, figsize = (20, 20))
+        _, (ax1 ) = plt.subplots(1, 1, figsize = (20, 20))
         ax1.imshow(image,cmap = 'gray')
         ax1.imshow(np.ma.masked_where(mask == False, mask_predict),cmap='cool', alpha=0.6)
         plt.savefig(f'{name}.png')
@@ -123,7 +115,8 @@ async def read_single_input(name: str):
         with open(output, 'rb') as f:
             contents = f.read()
 
-        gridfs.put(contents, filename=f"{name}.png")    
+        gridfs.put(contents, filename=f"{name}.png")
+
         return {
             "name": f"{name}.png",
             "time": duration,
@@ -134,6 +127,14 @@ async def read_single_input(name: str):
         return {
             "error": str(e)
         }
+
+
+@app.get("/single")
+async def read_single_input(name: str):
     
+    result = await process_single(name)
+    
+    return result
+
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8080)
