@@ -8,6 +8,9 @@
 ![Screenshot from 2024-04-12 11-28-39](https://github.com/ozkanuysal/task-gesund/assets/61411331/d0280716-bca5-489e-93ba-f8cde3ee9a94)
 
 
+# Export password for Mongodb 
+- Example usage : export MONGO_PASSWORD=''
+
 
 
 # task-gesund Step by Step Application
