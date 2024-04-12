@@ -22,7 +22,6 @@ import time
 dns.resolver.default_resolver=dns.resolver.Resolver(configure=False)
 dns.resolver.default_resolver.nameservers=['8.8.8.8']
 
-# Create MongoDB client
 cluster = MongoClient(
     host = 'mongodb+srv://clus.75dbtja.mongodb.net', 
     serverSelectionTimeoutMS = 3000,
@@ -36,6 +35,10 @@ collection = db["case"]
 gridfs = gridfs.GridFS(db)
 
 def page_one():
+    """
+    A function that handles the UI for selecting datasets and running tasks either individually or in batches.
+    Makes API requests to a localhost server to retrieve and display images. Calculates and displays average time per image.
+    """
 
     st.title('Gesund AI Task')
     options_names = st.selectbox('Select Single Dataset', ['BraTS20_Training_158', 'BraTS20_Training_234', 'BraTS20_Training_230', 'BraTS20_Training_249', 'BraTS20_Training_238'])
@@ -51,11 +54,7 @@ def page_one():
         with st.status("Processing...", expanded=False) as status :
             response = requests.get(f'http://localhost:8080/single?name={options_names}')
             if response.status_code == 200:
-                # Take a count for images in the pymongo
-                count = files_collection_images.count_documents({"filename": f"{options_names}.png"})
-                #avg_time = collection.aggregate([{"$group": {"_id": "$name", "avg": {"$avg": "$time"}}}])[0]["avg"]
-                
-
+                count = files_collection_images.count_documents({"filename": f"{options_names}.png"})           
                 data = files_collection_images.find_one({"filename": f"{options_names}.png"})
                 file_id = data.get('_id')
                 chunks_query = {"files_id": file_id}
@@ -65,12 +64,7 @@ def page_one():
                 st.image(image, caption=response.json().get('name'))
                 status.update(label="Completed!", state="complete", expanded=True)
                 
-                # st.write(response.json())
-                
-                # st.write('Total count : ' + str(count))
-
                 avg_time = collection.find({"name": f"{options_names}.png"})
-
                 avg_times = 0
                 avg_counter = 0
 
