@@ -1,3 +1,8 @@
+# Model.pth access file link: 
+- https://drive.google.com/file/d/1lrMmrWfSdwu4AqaBAJp7Mdsj9ILCCX8y/view?usp=sharing
+
+
+
 # Diagram of working System.
 
 ![Screenshot from 2024-04-12 11-28-39](https://github.com/ozkanuysal/task-gesund/assets/61411331/d0280716-bca5-489e-93ba-f8cde3ee9a94)
